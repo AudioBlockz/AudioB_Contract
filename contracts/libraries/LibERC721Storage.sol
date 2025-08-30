@@ -1,32 +1,55 @@
-// SPDX-License-Identifier: MIT
+//SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
 library LibERC721Storage {
-    struct ERC721Layout {
-        string name;
-        string symbol;
-        mapping(uint256 => address) owners;
-        mapping(address => uint256) balances;
-        mapping(uint256 => address) tokenApprovals;
-        mapping(address => mapping(address => bool)) operatorApprovals;
-        mapping(uint256 => string) tokenURIs;
-        uint256 tokenIdCounter;
+    bytes32 constant ERC721_STORAGE_POSITION = keccak256("audioblocks.diamond.standard.erc721.storage");
 
-        // EIP-2981 royalty info
-        // royaltyReceiver and royaltyFraction are per-token in this simple model,
-        // you can also implement a global default + per-token override.
-        mapping(uint256 => address) royaltyReceiver;
-        mapping(uint256 => uint96) royaltyFraction; // in basis points (parts per 10,000)
-        uint96 royaltyDenominator; // normally 10000
+    struct ERC721Storage {
+        // Token name
+        string name;
+        // Token symbol
+        string symbol;
+        // Mapping from token ID to owner address
+        mapping(uint256 => address) owners;
+        // Mapping owner address to token count
+        mapping(address => uint256) balances;
+        // Mapping from token ID to approved address
+        mapping(uint256 => address) tokenApprovals;
+        // Mapping from owner to operator approvals
+        mapping(address => mapping(address => bool)) operatorApprovals;
+        // Counter for token IDs
+        uint256 currentTokenId;
+        // Mapping from token ID to token URI
+        mapping(uint256 => string) tokenURIs;
     }
 
-    // Unique slot — change if creating additional independent collections
-    bytes32 internal constant STORAGE_SLOT = keccak256("audioblocks.erc721.storage.v1");
-
-    function s() internal pure returns (ERC721Layout storage l) {
-        bytes32 slot = STORAGE_SLOT;
+    function erc721Storage() internal pure returns (ERC721Storage storage es) {
+        bytes32 position = ERC721_STORAGE_POSITION;
         assembly {
-            l.slot := slot
+            es.slot := position
         }
+    }
+
+    // Internal mint function - cleaner than cross-facet calls
+    function mint(address to, uint256 tokenId, string memory tokenURI) internal {
+        require(to != address(0), "ERC721: mint to the zero address");
+        require(!exists(tokenId), "ERC721: token already minted");
+
+        ERC721Storage storage es = erc721Storage();
+        
+        es.balances[to] += 1;
+        es.owners[tokenId] = to;
+        es.tokenURIs[tokenId] = tokenURI;
+
+        // Note: Events should be emitted in the calling facet
+    }
+
+    function exists(uint256 tokenId) internal view returns (bool) {
+        return erc721Storage().owners[tokenId] != address(0);
+    }
+
+    function setTokenURI(uint256 tokenId, string memory uri) internal {
+        require(exists(tokenId), "ERC721: URI set of nonexistent token");
+        erc721Storage().tokenURIs[tokenId] = uri;
     }
 }

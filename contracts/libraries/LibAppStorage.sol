@@ -9,6 +9,10 @@ library LibAppStorage {
         uint256 artistId;
         address artistAddress;
         string artistCid;
+        uint256 artistTokenId;
+        bool isRegistered;
+        uint256[] songTokenIds;
+
     }
 
     //Song
@@ -46,16 +50,20 @@ library LibAppStorage {
         // App-specific fields
         address owner;
         uint256 tokenCounter;
-        uint256 totalArtist;
+        uint256 totalArtists;
         uint256[] allArtistIds;
         mapping(address => Artist) artistAddressToArtist;
         mapping(uint256 => Artist) artistIdToArtist;
         mapping(address => uint256) artistBalance; //Artist Address to Balance
+        mapping(uint256 => bool) isArtistToken; // true if token represents artist, false if song
+
+
         //Song
-        uint256 totalSong;
+        uint256 totalSongs;
         uint256[] allSongIds;
         mapping(address => uint256[]) artistToSongIds; //ArtistToArray of songs
         mapping(uint256 => Song) songIdToSong; //Song Id to Song Struct.
+        
         //ALBUM
         mapping(uint256 => Album) albums;
         mapping(address => uint256[]) artistToAlbum;
