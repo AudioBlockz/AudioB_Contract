@@ -4,6 +4,9 @@ pragma solidity ^0.8.0;
 /// @notice All domain types for the app can live here or in a separate Types lib.
 library LibAppStorage {
 
+    event ArtistRegistered(uint256 indexed artistId, address indexed artistAddress, string artistCid, uint256 indexed artistTokenId);
+    event ArtistUpdated(uint256 indexed artistId, address indexed artistAddress, uint256 indexed artistTokenId, string artistCid);
+
     //Artist
     struct Artist {
         uint256 artistId;
@@ -48,6 +51,11 @@ library LibAppStorage {
     /// @dev Application-wide storage (separate from Diamond's selector/owner storage).
     struct AppStorage {
         // App-specific fields
+        address platFormAddress;
+        uint96 platformRoyaltyFee; // 200 = 2%
+        uint96 artistRoyaltyFee; // 500 = 5%
+
+
         address owner;
         uint256 tokenCounter;
         uint256 totalArtists;
@@ -69,6 +77,8 @@ library LibAppStorage {
         mapping(address => uint256[]) artistToAlbum;
         uint256 totalAlbum;
         uint256[] allAlbums;
+
+
         //USER
         uint256 totalStreamers;
         mapping(address => Streamer) streamers;

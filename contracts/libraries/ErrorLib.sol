@@ -15,5 +15,6 @@ library ErrorLib {
     error USERALREADYADDED();
     error ARTIST_ALREADY_REGISTERED();
     error ARTIST_NOT_REGISTERED();
+    error ARTIST_NOT_FOUND();
     
 }

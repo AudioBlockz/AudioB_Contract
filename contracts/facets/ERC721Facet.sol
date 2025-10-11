@@ -2,9 +2,10 @@
 pragma solidity ^0.8.0;
 
 import {IERC721} from "../interfaces/IERC721.sol";
+import {IERC2981} from "../interfaces/IERC2981.sol";
 import {IERC721Receiver} from "../interfaces/IERC721Receiver.sol";
 import {LibERC721Storage} from "../libraries/LibERC721Storage.sol";
-contract ERC721Facet is IERC721 {
+contract ERC721Facet is IERC721, IERC2981 {
     using LibERC721Storage for LibERC721Storage.ERC721Storage;
 
     modifier onlyTokenExists(uint256 tokenId) {
@@ -46,17 +47,55 @@ contract ERC721Facet is IERC721 {
         _approve(to, tokenId);
     }
 
-    function mint(address to, uint256 tokenId) external {
-        require(to != address(0), "ERC721: mint to the zero address");
-        require(!_exists(tokenId), "ERC721: token already minted");
+    function mint(address to, uint256 tokenId, string memory uri) external {
+        LibERC721Storage.mint(to, tokenId, uri);
+        emit Transfer(address(0), to, tokenId);
+    }
 
-        _mint(to, tokenId);
-        
+     //  Mint and set artist address
+    function mintWithRoyalty(address to, string memory uri) external {
+        LibERC721Storage.ERC721Storage storage es = LibERC721Storage.erc721Storage();
+        uint256 tokenId = ++es.currentTokenId;
+
+        LibERC721Storage.mint(to, tokenId, uri);
+        LibERC721Storage.setTokenArtist(tokenId, msg.sender);
+
+        emit Transfer(address(0), to, tokenId);
+    }
+
+    // RoyaltyInfo (EIP-2981-like)
+    function royaltyInfo(
+        uint256 tokenId,
+        uint256 salePrice
+    )
+        external
+        view
+        returns (address receiver, uint256 royaltyAmount)
+    {
+        // For marketplaces that support only one receiver, return artist
+        // But for AudioBlocks, we can expose both via custom function
+
+        // address[] memory receivers;
+        // uint256[] memory amounts;
+
+        (receiver, royaltyAmount) = LibERC721Storage.royaltyInfo(tokenId, salePrice);
+
+        // EIP-2981 supports only one receiver, so return artist’s part
+        // return (receivers[0], amounts[0]);
+    }
+
+    // Custom getter to return both splits for your backend
+    function fullRoyaltyBreakdown(uint256 tokenId, uint256 salePrice)
+        external
+        view
+        returns (address[] memory receivers, uint256[] memory amounts)
+    {
+        return LibERC721Storage.royaltyFullInfo(tokenId, salePrice);
     }
 
     function setTokenURI(uint256 tokenId, string memory uri) external {
-        require(_exists(tokenId), "ERC721: URI set of nonexistent token");
-        _setTokenURI(tokenId, uri);
+        LibERC721Storage.setTokenURI(tokenId, uri);
+
     }
 
     function getApproved(uint256 tokenId) external view override onlyTokenExists(tokenId) returns (address) {
@@ -90,24 +129,6 @@ contract ERC721Facet is IERC721 {
     // Internal functions
     function _exists(uint256 tokenId) internal view returns (bool) {
         return LibERC721Storage.erc721Storage().owners[tokenId] != address(0);
-    }
-
-    function _mint(address to, uint256 tokenId) internal {
-        require(to != address(0), "ERC721: mint to the zero address");
-        require(!_exists(tokenId), "ERC721: token already minted");
-
-        LibERC721Storage.ERC721Storage storage es = LibERC721Storage.erc721Storage();
-        
-        es.balances[to] += 1;
-        es.owners[tokenId] = to;
-
-        emit Transfer(address(0), to, tokenId);
-    }
-    
-
-    function _setTokenURI(uint256 tokenId, string memory uri) internal {
-        require(_exists(tokenId), "ERC721: URI set of nonexistent token");
-        LibERC721Storage.erc721Storage().tokenURIs[tokenId] = uri;
     }
 
     function _approve(address to, uint256 tokenId) internal {
