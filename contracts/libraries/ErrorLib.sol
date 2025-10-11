@@ -16,5 +16,8 @@ library ErrorLib {
     error ARTIST_ALREADY_REGISTERED();
     error ARTIST_NOT_REGISTERED();
     error ARTIST_NOT_FOUND();
+    error SONG_NOT_FOUND();
+    error NOT_SONG_OWNER();
+    error InvalidArrayLength();
     
 }

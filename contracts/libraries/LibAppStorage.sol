@@ -21,10 +21,10 @@ library LibAppStorage {
     //Song
     struct Song {
         uint256 songId;
+        uint256 tokenId;
         address artistAddress;
-        string songCID;
-        uint256 totalStreams;
-        uint256 totalLikes;
+        string songCID; // IPFS CID for metadata
+        address royaltyReceiver;
         uint256 createdAt;
     }
 
@@ -34,6 +34,7 @@ library LibAppStorage {
         string albumCID;
         address artistAddress;
         uint256[] songIds;
+        uint256[] songTokenIds;
         bool published;
         uint256 createdAt;
         uint256 publishedAt;
@@ -69,13 +70,13 @@ library LibAppStorage {
         //Song
         uint256 totalSongs;
         uint256[] allSongIds;
-        mapping(address => uint256[]) artistToSongIds; //ArtistToArray of songs
+        mapping(address => uint256[]) artistToSongIds; //Artist To Array of songs
         mapping(uint256 => Song) songIdToSong; //Song Id to Song Struct.
         
         //ALBUM
         mapping(uint256 => Album) albums;
-        mapping(address => uint256[]) artistToAlbum;
-        uint256 totalAlbum;
+        mapping(address => uint256[]) artistToAlbum; //Track all albums per artist
+        uint256 totalAlbums;
         uint256[] allAlbums;
 
 
@@ -83,6 +84,11 @@ library LibAppStorage {
         uint256 totalStreamers;
         mapping(address => Streamer) streamers;
         mapping(uint256 => Streamer) streamerIdToStreamer;
+
+
+        // Royalty Splitter contracts per artist
+        mapping(address => address) artistRoyaltySplitter; // artist address → splitter contract address
+
 
     }
 
