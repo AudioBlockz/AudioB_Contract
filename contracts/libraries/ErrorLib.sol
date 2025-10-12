@@ -19,5 +19,7 @@ library ErrorLib {
     error SONG_NOT_FOUND();
     error NOT_SONG_OWNER();
     error InvalidArrayLength();
+    error ALBUM_NOT_FOUND();
+    error NOT_ALBUM_OWNER();
     
 }

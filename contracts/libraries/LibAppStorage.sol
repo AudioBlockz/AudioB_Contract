@@ -31,6 +31,7 @@ library LibAppStorage {
     //Album
     struct Album {
         uint256 albumId;
+        uint256 tokenId;
         string albumCID;
         address artistAddress;
         uint256[] songIds;

@@ -8,8 +8,6 @@ import {ERC721Facet} from "./ERC721Facet.sol";
 import {LibERC721Storage} from "../libraries/LibERC721Storage.sol";
 import {LibRoyaltySplitterFactory} from "../libraries/LibRoyaltySplitterFactory.sol";
 
-
-
 contract SongFacet {
 
     using LibAppStorage for LibAppStorage.AppStorage;
@@ -201,6 +199,8 @@ contract SongFacet {
         string memory newURI = string(abi.encodePacked("ipfs://", newCid));
         LibERC721Storage.setTokenURI(aps.songIdToSong[songId].tokenId, newURI);
 
+        emit SongUploadedSuccessfully(songId, aps.songIdToSong[songId].tokenId, msg.sender, newCid);
+
     }
 
     function getSongInfo(uint256 songId) external view returns (LibAppStorage.Song memory) {
@@ -215,5 +215,4 @@ contract SongFacet {
     function isArtistToken(uint256 tokenId) external view returns (bool) {
         return LibAppStorage.appStorage().isArtistToken[tokenId];
     }
-
 }
