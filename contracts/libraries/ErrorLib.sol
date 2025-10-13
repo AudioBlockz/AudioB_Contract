@@ -21,5 +21,11 @@ library ErrorLib {
     error InvalidArrayLength();
     error ALBUM_NOT_FOUND();
     error NOT_ALBUM_OWNER();
+    error NOT_TOKEN_OWNER();
+    error LISTING_PRICE_TOO_LOW();
+    error AUNCTION_NOT_FOUND();
+    error AUNCTION_ENED();
+    error NO_BID();
+    error BID_TOO_LOW();
     
 }

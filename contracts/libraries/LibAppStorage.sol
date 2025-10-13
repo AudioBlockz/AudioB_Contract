@@ -7,6 +7,10 @@ library LibAppStorage {
     event ArtistRegistered(uint256 indexed artistId, address indexed artistAddress, string artistCid, uint256 indexed artistTokenId);
     event ArtistUpdated(uint256 indexed artistId, address indexed artistAddress, uint256 indexed artistTokenId, string artistCid);
 
+    uint256 public constant MIN_AUCTION_DURATION = 1 minutes;
+    uint256 public constant MIN_BID_INCREMENT_BPS = 500; // 5% minimum increment
+    uint256 internal constant MARKETPLACE_FEE_BPS = 300; // 3% marketplace fee on sales
+
     //Artist
     struct Artist {
         uint256 artistId;
@@ -48,7 +52,24 @@ library LibAppStorage {
         string cid;
         uint256 balance;
     }
-   
+
+    // MarketPlace Structs
+    struct Listing {
+        address seller;
+        uint256 price; // wei
+        bool active;
+        address erc20Address; // address(0) for ETH
+    }
+
+    struct Auction {
+        address seller;
+        address erc20TokenAddress;
+        uint256 reservePrice;
+        uint256 endTime; // timestamp
+        address highestBidder;
+        uint256 highestBid;
+        bool settled;
+    }
 
     /// @dev Application-wide storage (separate from Diamond's selector/owner storage).
     struct AppStorage {
@@ -89,6 +110,12 @@ library LibAppStorage {
 
         // Royalty Splitter contracts per artist
         mapping(address => address) artistRoyaltySplitter; // artist address → splitter contract address
+        
+
+        // MarketPlace Mappings
+        // mappings (tokenId => ...)
+        mapping(uint256 =>  Listing)  listings; // TokenId => Listing
+        mapping(uint256 => Auction)  auctions; // TokenId => Auction
 
 
     }

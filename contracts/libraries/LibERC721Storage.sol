@@ -101,6 +101,13 @@ library LibERC721Storage {
     }
 
 
+    function getPlatformRoyalty() internal view returns (address receiver, uint96 fraction) {
+        ERC721Storage storage es = erc721Storage();
+        receiver = es.platformRoyalty.receiver;
+        fraction = es.platformRoyalty.royaltyFraction;
+    }
+
+
     // Royalty Info returns full royalty breakdown details for off-chain use
     function royaltyFullInfo(uint256 tokenId, uint256 salePrice) internal view returns (address[] memory receivers, uint256[] memory amounts)
     {
@@ -121,7 +128,6 @@ library LibERC721Storage {
 
         receivers[1] = es.platformRoyalty.receiver;
         amounts[1] = platformAmt;
-
     }
     
     
