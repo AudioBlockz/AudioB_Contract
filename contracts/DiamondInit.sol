@@ -1,8 +1,10 @@
 //SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
+
 import {LibDiamond} from "./libraries/LibDiamond.sol";
 import {LibAppStorage} from "./libraries/LibAppStorage.sol";
 import {LibERC721Storage} from "./libraries/LibERC721Storage.sol";
+
 contract DiamondInit {
     using LibERC721Storage for LibERC721Storage.ERC721Storage;
     using LibAppStorage for LibAppStorage.AppStorage;
@@ -13,11 +15,7 @@ contract DiamondInit {
     /// @param _name The name of the ERC721 token.
     /// @param _symbol The symbol of the ERC721 token.
     /// @param _owner The owner of the diamond contract.
-    function init(
-        string memory _name,
-        string memory _symbol,
-        address _owner
-    ) external {
+    function init(string memory _name, string memory _symbol, address _owner) external {
         // Initialize ERC721 storage
         LibERC721Storage.ERC721Storage storage erc721 = LibERC721Storage.erc721Storage();
         erc721.name = _name;

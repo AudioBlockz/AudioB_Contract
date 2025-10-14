@@ -10,11 +10,10 @@ library NFTLibrary {
     event Transfer(address indexed from, address indexed to, uint256 indexed tokenId);
 
     /// @dev mints an ERC721 token for an album (uses es.currentTokenId)
-    function _mintNFT(
-        address artist,
-        string memory cid,
-        LibERC721Storage.ERC721Storage storage es
-    ) internal returns (uint256 tokenId) {
+    function _mintNFT(address artist, string memory cid, LibERC721Storage.ERC721Storage storage es)
+        internal
+        returns (uint256 tokenId)
+    {
         tokenId = ++es.currentTokenId;
         string memory tokenURI = string(abi.encodePacked("ipfs://", cid));
         LibERC721Storage.mint(artist, tokenId, tokenURI);
@@ -23,10 +22,10 @@ library NFTLibrary {
     }
 
     /// @dev returns existing splitter or creates and stores a new one in AppStorage
-    function _getOrCreateSplitter(
-        address artist,
-        LibAppStorage.AppStorage storage aps
-    ) internal returns (address splitter) {
+    function _getOrCreateSplitter(address artist, LibAppStorage.AppStorage storage aps)
+        internal
+        returns (address splitter)
+    {
         splitter = aps.artistRoyaltySplitter[artist];
         if (splitter == address(0)) {
             splitter = LibRoyaltySplitterFactory.createRoyaltySplitter(
@@ -34,7 +33,7 @@ library NFTLibrary {
                 aps.platFormAddress,
                 aps.artistRoyaltyFee,
                 aps.platformRoyaltyFee,
-                LibERC721Storage.MAX_ROYALTY_BONUS
+                LibAppStorage.MAX_ROYALTY_BONUS
             );
             aps.artistRoyaltySplitter[artist] = splitter;
         }

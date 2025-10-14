@@ -8,8 +8,7 @@ import {IERC20} from "../interfaces/IERC20.sol";
 import {ErrorLib} from "../libraries/ErrorLib.sol";
 import {MarketplacePaymentLib} from "../libraries/MarketplacePaymentLib.sol";
 
-
-contract MarketplaceFacet {
+contract MarketPlaceFacet {
     using LibAppStorage for LibAppStorage.AppStorage;
     using LibERC721Storage for LibERC721Storage.ERC721Storage;
 
@@ -23,9 +22,9 @@ contract MarketplaceFacet {
     event AuctionCancelled(uint256 indexed tokenId, address indexed seller);
     event AuctionSettled(uint256 indexed tokenId, address indexed winner, address indexed seller, uint256 amount);
 
-
     // simple reentrancy guard (slot independent)
     bytes32 private constant REENTRANCY_SLOT = keccak256("audioblocks.marketplace.reentrancy");
+
     modifier nonReentrant() {
         uint256 status;
         bytes32 s = REENTRANCY_SLOT;
@@ -42,7 +41,6 @@ contract MarketplaceFacet {
         }
     }
 
-
     // ---------- Fixed-price listing API ----------
 
     /// @notice Seller lists an owned NFT for fixed price. Seller must be token owner.
@@ -57,7 +55,7 @@ contract MarketplaceFacet {
         //Calculate minimum price to cover royalty + marketplace fee
         (, uint256 royaltyAmount, uint256 platformFee,) = MarketplacePaymentLib.calculateRoyaltyAndFees(price, tokenId);
         uint256 minPrice = royaltyAmount + platformFee;
-        if(price < minPrice) revert ErrorLib.LISTING_PRICE_TOO_LOW();
+        if (price < minPrice) revert ErrorLib.LISTING_PRICE_TOO_LOW();
 
         LibAppStorage.Listing storage listing = aps.listings[tokenId];
         require(!listing.active, "Already listed");
@@ -65,7 +63,6 @@ contract MarketplaceFacet {
         listing.price = price;
         listing.active = true;
         listing.erc20Address = _erc20Address;
-
 
         emit Listed(tokenId, msg.sender, price);
     }
@@ -108,11 +105,12 @@ contract MarketplaceFacet {
         emit Bought(tokenId, msg.sender, seller, price);
     }
 
-
     // ---------- Auction API (English auction) ----------
 
     /// @notice Create an auction for tokenId: seller must be owner.
-    function createAuction(uint256 tokenId, uint256 reservePrice, uint256 durationSeconds, address _erc20Address) external {
+    function createAuction(uint256 tokenId, uint256 reservePrice, uint256 durationSeconds, address _erc20Address)
+        external
+    {
         LibAppStorage.AppStorage storage aps = LibAppStorage.appStorage();
         LibERC721Storage.ERC721Storage storage es = LibERC721Storage.erc721Storage();
 
@@ -140,9 +138,9 @@ contract MarketplaceFacet {
 
         address tokenAddr = a.erc20TokenAddress;
 
-        if(a.seller == address(0)) revert ErrorLib.AUNCTION_NOT_FOUND();
-        if(block.timestamp >= a.endTime) revert ErrorLib.AUNCTION_ENED();
-        if(a.settled== true) revert ErrorLib.AUNCTION_ENED();
+        if (a.seller == address(0)) revert ErrorLib.AUNCTION_NOT_FOUND();
+        if (block.timestamp >= a.endTime) revert ErrorLib.AUNCTION_ENED();
+        if (a.settled == true) revert ErrorLib.AUNCTION_ENED();
 
         if (tokenAddr == address(0)) {
             require(msg.value > 0, "No bid");
@@ -162,8 +160,7 @@ contract MarketplaceFacet {
             uint256 increment = (a.highestBid * LibAppStorage.MIN_BID_INCREMENT_BPS) / 10000;
             minRequired = a.highestBid + (increment == 0 ? 1 : increment);
         }
-        if(incoming < minRequired) revert ErrorLib.BID_TOO_LOW();
-
+        if (incoming < minRequired) revert ErrorLib.BID_TOO_LOW();
 
         // store previous highest to refund later
         address prevBidder = a.highestBidder;
@@ -176,14 +173,13 @@ contract MarketplaceFacet {
         // interaction: refund previous highest bidder (if any)
         MarketplacePaymentLib.refundPrevBidder(tokenId, address(this), prevBidder, prevBid);
 
-
         emit BidPlaced(tokenId, msg.sender, incoming);
     }
 
     /// @notice Cancel an auction (only seller, only if no bids)
     function cancelAuction(uint256 tokenId) external {
         LibAppStorage.AppStorage storage aps = LibAppStorage.appStorage();
-        
+
         LibAppStorage.Auction storage a = aps.auctions[tokenId];
 
         require(a.seller != address(0), "Auction not found");
@@ -217,26 +213,19 @@ contract MarketplaceFacet {
         emit AuctionSettled(tokenId, winner, auc.seller, amount);
     }
 
-
     // ---------- Helper view getters ----------
 
     function getListing(uint256 tokenId) external view returns (LibAppStorage.Listing memory) {
         LibAppStorage.AppStorage storage aps = LibAppStorage.appStorage();
-        
+
         LibAppStorage.Listing storage a = aps.listings[tokenId];
         return a;
     }
 
     function getAuction(uint256 tokenId) external view returns (LibAppStorage.Auction memory) {
         LibAppStorage.AppStorage storage aps = LibAppStorage.appStorage();
-        
+
         LibAppStorage.Auction storage a = aps.auctions[tokenId];
         return a;
     }
-
-
-
-    // ---- Internal Helper functions ----
-    //@note make sure the price for aunction is more when royalty fee is removed from sale price
-    
 }

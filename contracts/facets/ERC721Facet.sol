@@ -5,6 +5,7 @@ import {IERC721} from "../interfaces/IERC721.sol";
 import {IERC2981} from "../interfaces/IERC2981.sol";
 import {IERC721Receiver} from "../interfaces/IERC721Receiver.sol";
 import {LibERC721Storage} from "../libraries/LibERC721Storage.sol";
+
 contract ERC721Facet is IERC721, IERC2981 {
     using LibERC721Storage for LibERC721Storage.ERC721Storage;
 
@@ -52,7 +53,7 @@ contract ERC721Facet is IERC721, IERC2981 {
         emit Transfer(address(0), to, tokenId);
     }
 
-     //  Mint and set artist address
+    //  Mint and set artist address
     function mintWithRoyalty(address to, string memory uri) external {
         LibERC721Storage.ERC721Storage storage es = LibERC721Storage.erc721Storage();
         uint256 tokenId = ++es.currentTokenId;
@@ -64,10 +65,7 @@ contract ERC721Facet is IERC721, IERC2981 {
     }
 
     // RoyaltyInfo (EIP-2981-like)
-    function royaltyInfo(
-        uint256 tokenId,
-        uint256 salePrice
-    )
+    function royaltyInfo(uint256 tokenId, uint256 salePrice)
         external
         view
         returns (address receiver, uint256 royaltyAmount)
@@ -95,7 +93,6 @@ contract ERC721Facet is IERC721, IERC2981 {
 
     function setTokenURI(uint256 tokenId, string memory uri) external {
         LibERC721Storage.setTokenURI(tokenId, uri);
-
     }
 
     function getApproved(uint256 tokenId) external view override onlyTokenExists(tokenId) returns (address) {
@@ -161,7 +158,10 @@ contract ERC721Facet is IERC721, IERC2981 {
         require(_checkOnERC721Received(from, to, tokenId, _data), "ERC721: transfer to non ERC721Receiver implementer");
     }
 
-    function _checkOnERC721Received(address from, address to, uint256 tokenId, bytes memory _data) private returns (bool) {
+    function _checkOnERC721Received(address from, address to, uint256 tokenId, bytes memory _data)
+        private
+        returns (bool)
+    {
         if (to.code.length > 0) {
             try IERC721Receiver(to).onERC721Received(msg.sender, from, tokenId, _data) returns (bytes4 retval) {
                 return retval == IERC721Receiver.onERC721Received.selector;

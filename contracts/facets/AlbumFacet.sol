@@ -10,29 +10,25 @@ import {LibRoyaltySplitterFactory} from "../libraries/LibRoyaltySplitterFactory.
 import {NFTLibrary} from "../libraries/NFTLibrary.sol";
 
 contract AlbumFacet {
-
     using LibAppStorage for LibAppStorage.AppStorage;
     using LibERC721Storage for LibERC721Storage.ERC721Storage;
 
-    event AlbumPublishedSuccessfully(
-        uint256 indexed albumId,
-        address indexed artist,
-        string albumCID
-    );
+    event AlbumPublishedSuccessfully(uint256 indexed albumId, address indexed artist, string albumCID);
 
     event Transfer(address indexed from, address indexed to, uint256 indexed tokenId);
-    event SongUploadedSuccessfully(uint256 indexed songId, uint256 indexed tokenId, address indexed artist, string songCid);
+    event SongUploadedSuccessfully(
+        uint256 indexed songId, uint256 indexed tokenId, address indexed artist, string songCid
+    );
     event SongAddedToAlbum(uint256 indexed albumId, uint256 indexed songId);
     event SongRemovedFromAlbum(uint256 indexed albumId, uint256 indexed songId);
     event AlbumSongsUpdated(uint256 indexed albumId, uint256[] songIds);
     event AlbumMetadataUpdated(uint256 indexed albumId, string newCid);
     event AlbumDestroyed(uint256 indexed albumId, address indexed artist);
 
-
-    function publishAlbum(
-        string memory _albumCID,
-        uint256[] memory existingSongIds
-    ) external returns (uint256 albumId, address artist, string memory albumCID, uint256 createdAt) {
+    function publishAlbum(string memory _albumCID, uint256[] memory existingSongIds)
+        external
+        returns (uint256 albumId, address artist, string memory albumCID, uint256 createdAt)
+    {
         LibAppStorage.AppStorage storage aps = LibAppStorage.appStorage();
         LibERC721Storage.ERC721Storage storage es = LibERC721Storage.erc721Storage();
 
@@ -42,19 +38,19 @@ contract AlbumFacet {
 
         if (artist == address(0)) revert ErrorLib.ZeroAddress();
         if (bytes(albumCID).length == 0) revert ErrorLib.InvalidCid();
-        if (!aps.artistAddressToArtist[artist].isRegistered)
+        if (!aps.artistAddressToArtist[artist].isRegistered) {
             revert ErrorLib.ARTIST_NOT_REGISTERED();
+        }
 
         uint256 totalExisting = existingSongIds.length;
         if (totalExisting == 0) revert ErrorLib.InvalidArrayLength();
 
         uint256 tokenId = NFTLibrary._mintNFT(artist, albumCID, es); // Mint NFT to represent the album
-        
+
         address splitter = NFTLibrary._getOrCreateSplitter(artist, aps); // Ensure splitter exists for artist
 
         //  Link royalty receiver to token
         LibERC721Storage.setTokenRoyaltyReceiver(tokenId, splitter);
-
 
         albumId = ++aps.totalAlbums;
 
@@ -82,10 +78,7 @@ contract AlbumFacet {
         return (albumId, artist, albumCID, createdAt);
     }
 
-    function updateAlbumMetaData(
-        uint256 albumId,
-        string memory newCid
-    ) external {
+    function updateAlbumMetaData(uint256 albumId, string memory newCid) external {
         LibAppStorage.AppStorage storage aps = LibAppStorage.appStorage();
         LibAppStorage.Album storage album = aps.albums[albumId];
 
@@ -98,10 +91,7 @@ contract AlbumFacet {
         emit AlbumMetadataUpdated(albumId, newCid);
     }
 
-    function updateAlbumSongs(
-        uint256 albumId,
-        uint256[] memory newSongIds
-    ) external {
+    function updateAlbumSongs(uint256 albumId, uint256[] memory newSongIds) external {
         LibAppStorage.AppStorage storage aps = LibAppStorage.appStorage();
         LibAppStorage.Album storage album = aps.albums[albumId];
 
@@ -123,10 +113,7 @@ contract AlbumFacet {
         emit AlbumSongsUpdated(albumId, allSongs);
     }
 
-    function removeSongFromAlbum(
-        uint256 albumId,
-        uint256 songId
-    ) external {
+    function removeSongFromAlbum(uint256 albumId, uint256 songId) external {
         LibAppStorage.AppStorage storage aps = LibAppStorage.appStorage();
         LibAppStorage.Album storage album = aps.albums[albumId];
 
@@ -143,7 +130,6 @@ contract AlbumFacet {
         }
 
         emit SongRemovedFromAlbum(albumId, songId);
-        
     }
 
     function destroyAlbum(uint256 albumId) external {
@@ -200,7 +186,6 @@ contract AlbumFacet {
     function _albumExists(uint256 albumId, LibAppStorage.AppStorage storage aps) private view returns (bool) {
         return aps.albums[albumId].albumId != 0;
     }
-
 
     /// @notice Return album details
     function getAlbum(uint256 albumId) external view returns (LibAppStorage.Album memory) {

@@ -5,11 +5,12 @@ library LibERC721ArtistRoyaltyStorage {
     bytes32 constant ERC721_STORAGE_POSITION = keccak256("audioblocks.diamond.standard.erc721.storage.artist.royalty");
     uint256 internal constant MAX_ROYALTY_BONUS = 500; // 5%
 
-     // Optional mapping for token royalties
+    // Optional mapping for token royalties
     struct RoyaltyInfo {
         address receiver;
         uint96 royaltyFraction; // e.g. 500 = 5%
     }
+
     struct ERC721Storage {
         // Token name
         string name;
@@ -27,16 +28,11 @@ library LibERC721ArtistRoyaltyStorage {
         uint256 currentTokenId;
         // Mapping from token ID to token URI
         mapping(uint256 => string) tokenURIs;
-
-
         // Royalty information Mapping
         mapping(uint256 => address) artists;
-        mapping(uint256 => RoyaltyInfo) royalties; 
+        mapping(uint256 => RoyaltyInfo) royalties;
         RoyaltyInfo defaultRoyalty;
-
     }
-
-   
 
     function erc721Storage() internal pure returns (ERC721Storage storage es) {
         bytes32 position = ERC721_STORAGE_POSITION;
@@ -48,30 +44,20 @@ library LibERC721ArtistRoyaltyStorage {
     // ---------------------------------
     // Royalty Management Functions
     // ---------------------------------
-    function setTokenRoyalty(
-        uint256 tokenId,
-        address receiver,
-        uint96 feeNumerator
-    ) internal {
+    function setTokenRoyalty(uint256 tokenId, address receiver, uint96 feeNumerator) internal {
         ERC721Storage storage es = erc721Storage();
         require(feeNumerator <= MAX_ROYALTY_BONUS, "Fee too high");
         es.royalties[tokenId] = RoyaltyInfo(receiver, feeNumerator);
     }
 
-    function setDefaultRoyalty(
-        address receiver,
-        uint96 feeNumerator
-    ) internal {
+    function setDefaultRoyalty(address receiver, uint96 feeNumerator) internal {
         require(feeNumerator <= MAX_ROYALTY_BONUS, "Fee too high");
         require(receiver != address(0), "Invalid receiver");
         ERC721Storage storage es = erc721Storage();
         es.defaultRoyalty = RoyaltyInfo(receiver, feeNumerator);
     }
 
-    function royaltyInfo(
-        uint256 tokenId,
-        uint256 salePrice
-    ) internal view returns (address, uint256) {
+    function royaltyInfo(uint256 tokenId, uint256 salePrice) internal view returns (address, uint256) {
         ERC721Storage storage es = erc721Storage();
         RoyaltyInfo memory royalty = es.royalties[tokenId];
 
@@ -89,7 +75,7 @@ library LibERC721ArtistRoyaltyStorage {
         require(!exists(tokenId), "ERC721: token already minted");
 
         ERC721Storage storage es = erc721Storage();
-        
+
         es.balances[to] += 1;
         es.owners[tokenId] = to;
         es.tokenURIs[tokenId] = tokenURI;

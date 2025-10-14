@@ -27,5 +27,4 @@ library ErrorLib {
     error AUNCTION_ENED();
     error NO_BID();
     error BID_TOO_LOW();
-    
 }

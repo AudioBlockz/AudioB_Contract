@@ -14,17 +14,12 @@ library MarketplacePaymentLib {
      * @param recipient Address receiving the amount (seller, royalty, or platform)
      * @param amount Amount to transfer
      */
-    function _handlePayment(
-        address tokenAddress,
-        address payer,
-        address recipient,
-        uint256 amount
-    ) internal {
+    function _handlePayment(address tokenAddress, address payer, address recipient, uint256 amount) internal {
         if (amount == 0 || recipient == address(0)) return;
 
         if (tokenAddress == address(0)) {
             // Native token transfer
-            (bool success, ) = payable(recipient).call{value: amount}("");
+            (bool success,) = payable(recipient).call{value: amount}("");
             require(success, "Native transfer failed");
         } else {
             IERC20 erc20 = IERC20(tokenAddress);
@@ -44,26 +39,25 @@ library MarketplacePaymentLib {
     /**
      * @notice Helper for distributing royalty, platform fee, and seller payment.
      */
-    function _distributeFunds(
-        address tokenAddress,
-        address payer,
-        address seller,
-        uint256 tokenId,
-        uint256 salePrice
-    ) internal returns (uint256 toSeller, uint256 royaltyAmount, uint256 platformFee, address royaltyReceiver) {
+    function _distributeFunds(address tokenAddress, address payer, address seller, uint256 tokenId, uint256 salePrice)
+        internal
+        returns (uint256 toSeller, uint256 royaltyAmount, uint256 platformFee, address royaltyReceiver)
+    {
         LibAppStorage.AppStorage storage aps = LibAppStorage.appStorage();
-        
+
         (royaltyReceiver, royaltyAmount) = LibERC721Storage.royaltyInfo(tokenId, salePrice);
         platformFee = (salePrice * LibAppStorage.MARKETPLACE_FEE_BPS) / 10000;
         toSeller = salePrice - royaltyAmount - platformFee;
 
         // First Distribute Royalty
-        if (royaltyAmount > 0)
+        if (royaltyAmount > 0) {
             _handlePayment(tokenAddress, payer, royaltyReceiver, royaltyAmount);
+        }
 
         //Second Distribute Platform fee
-        if (platformFee > 0)
+        if (platformFee > 0) {
             _handlePayment(tokenAddress, payer, aps.platFormAddress, platformFee);
+        }
 
         //Pay Seller In this Case the Artist
         _handlePayment(tokenAddress, payer, seller, toSeller);
@@ -72,14 +66,9 @@ library MarketplacePaymentLib {
     /**
      * @notice Handle refund Prev Bidder
      */
-     function refundPrevBidder(
-        uint256 tokenId,
-        address payer,
-        address prevBidder,
-        uint256 prevBid
-    ) internal {
+    function refundPrevBidder(uint256 tokenId, address payer, address prevBidder, uint256 prevBid) internal {
         LibAppStorage.AppStorage storage aps = LibAppStorage.appStorage();
-        
+
         LibAppStorage.Auction storage a = aps.auctions[tokenId];
         require(a.highestBidder == prevBidder, "Not highest bidder");
         require(a.highestBid == prevBid, "Invalid bid");
@@ -88,41 +77,40 @@ library MarketplacePaymentLib {
         require(!a.settled, "Already settled");
 
         _handlePayment(a.erc20TokenAddress, payer, prevBidder, prevBid);
-
-
-            
     }
 
-    function _settleAuctions(
-    address tokenAddress,
-    address payer,
-    uint256 tokenId,
-    uint256 price
-) internal returns (uint256 toSeller, uint256 royaltyAmount, uint256 platformFee, address royaltyReceiver) {
-    LibAppStorage.AppStorage storage aps = LibAppStorage.appStorage();
+    function _settleAuctions(address tokenAddress, address payer, uint256 tokenId, uint256 price)
+        internal
+        returns (uint256 toSeller, uint256 royaltyAmount, uint256 platformFee, address royaltyReceiver)
+    {
+        LibAppStorage.AppStorage storage aps = LibAppStorage.appStorage();
 
-    // Calculate royalty and platform fees
-    (toSeller, royaltyAmount, platformFee, royaltyReceiver) = calculateRoyaltyAndFees(price, tokenId);
+        // Calculate royalty and platform fees
+        (toSeller, royaltyAmount, platformFee, royaltyReceiver) = calculateRoyaltyAndFees(price, tokenId);
 
-    // Pay royalty receiver (if any)
-    if (royaltyAmount > 0) {
-        _handlePayment(tokenAddress, payer, royaltyReceiver, royaltyAmount);
+        // Pay royalty receiver (if any)
+        if (royaltyAmount > 0) {
+            _handlePayment(tokenAddress, payer, royaltyReceiver, royaltyAmount);
+        }
+
+        // Pay platform fee
+        if (platformFee > 0) {
+            _handlePayment(tokenAddress, payer, aps.platFormAddress, platformFee);
+        }
+
+        // Pay seller
+        address seller = aps.listings[tokenId].seller;
+        _handlePayment(tokenAddress, payer, seller, toSeller);
     }
 
-    // Pay platform fee
-    if (platformFee > 0) {
-        _handlePayment(tokenAddress, payer, aps.platFormAddress, platformFee);
-    }
-
-    // Pay seller
-    address seller = aps.listings[tokenId].seller;
-    _handlePayment(tokenAddress, payer, seller, toSeller);
-}
-
-    function calculateRoyaltyAndFees(uint256 salePrice, uint256 tokenId) internal view returns (uint256 toSeller, uint256 royaltyAmount, uint256 platformFee, address royaltyReceiver) {
+    function calculateRoyaltyAndFees(uint256 salePrice, uint256 tokenId)
+        internal
+        view
+        returns (uint256 toSeller, uint256 royaltyAmount, uint256 platformFee, address royaltyReceiver)
+    {
         (royaltyReceiver, royaltyAmount) = LibERC721Storage.royaltyInfo(tokenId, salePrice);
         platformFee = (salePrice * LibAppStorage.MARKETPLACE_FEE_BPS) / 10000;
         // amount that should go to the seller after deducting royalty and platform fee
         toSeller = salePrice - royaltyAmount - platformFee;
-        }
     }
+}

@@ -39,12 +39,6 @@ library LibRoyaltySplitterFactory {
         clone = Clones.clone(fs.splitterImplementation);
 
         // Initialize the cloned splitter
-        RoyaltySplitter(payable(clone)).initialize(
-            artist,
-            platform,
-            artistShare,
-            platformShare,
-            max_total_share
-        );
+        RoyaltySplitter(payable(clone)).initialize(artist, platform, artistShare, platformShare, max_total_share);
     }
 }

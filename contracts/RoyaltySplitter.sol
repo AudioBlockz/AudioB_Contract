@@ -8,8 +8,8 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 contract RoyaltySplitter {
     address public artist;
     address public platform;
-    uint96 public artistShare;     // 500 = 5%
-    uint96 public platformShare;   // 200 = 2%
+    uint96 public artistShare; // 500 = 5%
+    uint96 public platformShare; // 200 = 2%
     bool private initialized;
 
     event PaymentReceived(address from, uint256 amount);
@@ -62,10 +62,10 @@ contract RoyaltySplitter {
         uint256 artistAmount = (totalAmount * artistShare) / 10000;
         uint256 platformAmount = totalAmount - artistAmount;
 
-        (bool s1, ) = payable(artist).call{value: artistAmount}("");
+        (bool s1,) = payable(artist).call{value: artistAmount}("");
         require(s1, "Artist transfer failed");
 
-        (bool s2, ) = payable(platform).call{value: platformAmount}("");
+        (bool s2,) = payable(platform).call{value: platformAmount}("");
         require(s2, "Platform transfer failed");
 
         emit RoyaltiesDistributed(artistAmount, platformAmount);
