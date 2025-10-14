@@ -13,8 +13,8 @@ contract RoyaltySplitter {
     bool private initialized;
 
     event PaymentReceived(address from, uint256 amount);
-    event RoyaltiesDistributed(uint256 artistAmount, uint256 platformAmount);
-    event ERC20RoyaltiesDistributed(address token, uint256 artistAmount, uint256 platformAmount);
+    event RoyaltiesDistributed(uint256 artistAmount, uint256 platformAmount, uint256 artistShare, uint256 platformShare);
+    event ERC20RoyaltiesDistributed(address token, uint256 artistAmount, uint256 platformAmount, uint256 artistShare, uint256 platformShare);
 
     modifier onlyOnce() {
         require(!initialized, "Already initialized");
@@ -60,7 +60,16 @@ contract RoyaltySplitter {
 
     function _distributeETH(uint256 totalAmount) internal {
         uint256 artistAmount = (totalAmount * artistShare) / 10000;
-        uint256 platformAmount = totalAmount - artistAmount;
+        // uint256 platformAmount = totalAmount - artistAmount;
+        uint256 platformAmount = (totalAmount * platformShare) / 10000;
+        uint256 distributed = artistAmount + platformAmount;
+
+         // Handle rounding dust (leftover wei)
+        uint256 remainder = totalAmount - distributed;
+        if (remainder > 0) {
+            artistAmount += remainder;
+        }
+
 
         (bool s1,) = payable(artist).call{value: artistAmount}("");
         require(s1, "Artist transfer failed");
@@ -68,16 +77,22 @@ contract RoyaltySplitter {
         (bool s2,) = payable(platform).call{value: platformAmount}("");
         require(s2, "Platform transfer failed");
 
-        emit RoyaltiesDistributed(artistAmount, platformAmount);
+        emit RoyaltiesDistributed(artistAmount, platformAmount, artistShare, platformShare);
     }
 
     function _distributeERC20(address token, uint256 totalAmount) internal {
+
         uint256 artistAmount = (totalAmount * artistShare) / 10000;
-        uint256 platformAmount = totalAmount - artistAmount;
+        // uint256 platformAmount = totalAmount - artistAmount;
+        uint256 platformAmount = (totalAmount * platformShare) / 10000;
+
+        uint256 distributed = artistAmount + platformAmount;
+
+      
 
         IERC20(token).transfer(artist, artistAmount);
         IERC20(token).transfer(platform, platformAmount);
 
-        emit ERC20RoyaltiesDistributed(token, artistAmount, platformAmount);
+        emit ERC20RoyaltiesDistributed(token, artistAmount, platformAmount, artistShare, platformShare);
     }
 }

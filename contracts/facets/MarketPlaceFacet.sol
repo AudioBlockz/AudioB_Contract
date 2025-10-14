@@ -20,7 +20,7 @@ contract MarketPlaceFacet {
     event AuctionCreated(uint256 indexed tokenId, address indexed seller, uint256 reservePrice, uint256 endTime);
     event BidPlaced(uint256 indexed tokenId, address indexed bidder, uint256 amount);
     event AuctionCancelled(uint256 indexed tokenId, address indexed seller);
-    event AuctionSettled(uint256 indexed tokenId, address indexed winner, address indexed seller, uint256 amount);
+    event AuctionSettled(uint256 indexed tokenId, address indexed winner, address indexed seller, uint256 amount, bool settled);
 
     // simple reentrancy guard (slot independent)
     bytes32 private constant REENTRANCY_SLOT = keccak256("audioblocks.marketplace.reentrancy");
@@ -45,7 +45,7 @@ contract MarketPlaceFacet {
 
     /// @notice Seller lists an owned NFT for fixed price. Seller must be token owner.
     function createListing(uint256 tokenId, uint256 price, address _erc20Address) external {
-        require(price > 0, "Invalid price");
+        if (price == 0) revert ErrorLib.INVALID_PRICE();
         LibERC721Storage.ERC721Storage storage es = LibERC721Storage.erc721Storage();
         LibAppStorage.AppStorage storage aps = LibAppStorage.appStorage();
         address owner = es.owners[tokenId];
@@ -126,6 +126,7 @@ contract MarketPlaceFacet {
         auction.reservePrice = reservePrice;
         auction.endTime = endTime;
         auction.erc20TokenAddress = _erc20Address;
+        
 
         emit AuctionCreated(tokenId, msg.sender, reservePrice, endTime);
     }
@@ -171,7 +172,9 @@ contract MarketPlaceFacet {
         a.highestBidder = msg.sender;
 
         // interaction: refund previous highest bidder (if any)
-        MarketplacePaymentLib.refundPrevBidder(tokenId, address(this), prevBidder, prevBid);
+        if (prevBidder != address(0)) {
+            MarketplacePaymentLib.refundPrevBidder(tokenId, address(this), prevBidder, prevBid);
+        }
 
         emit BidPlaced(tokenId, msg.sender, incoming);
     }
@@ -190,15 +193,19 @@ contract MarketPlaceFacet {
         emit AuctionCancelled(tokenId, msg.sender);
     }
 
+    event CurrentTimesStamps(uint256 currentTime, uint256 endTime, bool ended);
+
     /// @notice Settle auction after it ends. Transfers NFT to winner and distributes funds.
     function settleAuction(uint256 tokenId) external nonReentrant {
         LibAppStorage.AppStorage storage aps = LibAppStorage.appStorage();
         LibAppStorage.Auction storage auc = aps.auctions[tokenId];
 
-        require(auc.settled, "Auction not active");
-        require(block.timestamp >= auc.endTime, "Auction not ended");
+        emit CurrentTimesStamps(block.timestamp, auc.endTime, auc.settled);
 
-        auc.settled = false;
+        require(!auc.settled, "Auction not active");
+        require(block.timestamp > auc.endTime, "Auction not ended");
+
+        auc.settled = true;
 
         address winner = auc.highestBidder;
         uint256 amount = auc.highestBid;
@@ -210,7 +217,7 @@ contract MarketPlaceFacet {
         // --- Transfer NFT
         ERC721Facet(address(this)).transferFrom(auc.seller, winner, tokenId);
 
-        emit AuctionSettled(tokenId, winner, auc.seller, amount);
+        emit AuctionSettled(tokenId, winner, auc.seller, amount, auc.settled);
     }
 
     // ---------- Helper view getters ----------

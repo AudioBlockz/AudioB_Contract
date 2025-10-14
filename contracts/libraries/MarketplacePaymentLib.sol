@@ -70,10 +70,10 @@ library MarketplacePaymentLib {
         LibAppStorage.AppStorage storage aps = LibAppStorage.appStorage();
 
         LibAppStorage.Auction storage a = aps.auctions[tokenId];
-        require(a.highestBidder == prevBidder, "Not highest bidder");
-        require(a.highestBid == prevBid, "Invalid bid");
+        // require(a.highestBidder == prevBidder, "Not highest bidder");
+        // require(a.highestBid == prevBid, "Invalid bid");
         require(a.seller != address(0), "Auction not found");
-        require(block.timestamp >= a.endTime, "Auction not ended");
+        require(block.timestamp <= a.endTime, "Auction not ended");
         require(!a.settled, "Already settled");
 
         _handlePayment(a.erc20TokenAddress, payer, prevBidder, prevBid);
