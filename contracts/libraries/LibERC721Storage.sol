@@ -34,6 +34,8 @@ library LibERC721Storage {
         mapping(uint256 => address) artists; // each token's artist
         RoyaltyInfo platformRoyalty; // platform receiver + %
         uint96 artistRoyaltyFraction; // artist % (e.g. 900 = 9%)
+
+        bool initialized;
     }
 
     function erc721Storage() internal pure returns (ERC721Storage storage es) {
